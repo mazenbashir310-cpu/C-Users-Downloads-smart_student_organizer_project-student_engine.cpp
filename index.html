@@ -1,0 +1,1934 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منظّم حياة الطالب الذكي — النسخة المطورة (HTML + JS + C++ Engine)</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Cairo', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        body {
+            font-family: 'Cairo', 'Inter', sans-serif;
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+        /* تصميم القوائم المنسدلة (Custom Styled Select Dropdowns) */
+        .custom-select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236366f1' stroke-width='2.2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: left 0.85rem center;
+            background-size: 1.15rem;
+            padding-left: 2.5rem !important;
+        }
+        .dark .custom-select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a5b4fc' stroke-width='2.2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+        }
+        /* شريط التمرير الأنيق */
+        ::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(148, 163, 184, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.45);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.75);
+        }
+        @keyframes pulse-border {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45); }
+            50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+        }
+        .urgent-24h-pulse {
+            animation: pulse-border 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col">
+
+    <!-- حاوية الإشعارات الفورية داخل الصفحة (Toast Notifications) -->
+    <div id="toastContainer" class="fixed bottom-5 left-5 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- الشريط العلوي (Header) -->
+    <header class="bg-gradient-to-l from-indigo-700 via-brand-600 to-violet-700 text-white shadow-lg sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-2xl shadow-inner border border-white/20">
+                    🎓
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-lg sm:text-xl font-extrabold tracking-tight">منظّم حياة الطالب الذكي</h1>
+                        <span class="text-[11px] font-bold bg-emerald-400/20 text-emerald-200 border border-emerald-300/30 px-2 py-0.5 rounded-full">النسخة المطورة 2.0</span>
+                    </div>
+                    <p id="motivationalQuote" class="text-xs text-indigo-100/90 mt-0.5 line-clamp-1">
+                        «النجاح هو محصلة مجهودات صغيرة تتكرر يومياً باجتهاد وتنظيم.»
+                    </p>
+                </div>
+            </div>
+
+            <!-- أزرار التحكم العلوية والإشعارات -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <button id="btnEnableNotifications" type="button" class="flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl bg-amber-400 text-slate-950 hover:bg-amber-300 transition shadow-sm">
+                    <span>🔔</span>
+                    <span id="notifStatusLabel">تفعيل إشعارات الجهاز (&lt; 24 ساعة)</span>
+                </button>
+                <button id="btnTestNotification" type="button" class="flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/20 transition" title="إرسال إشعار تجريبي فوري للهاتف أو الكمبيوتر">
+                    <span>📲</span>
+                    <span class="hidden sm:inline">اختبار الإشعار</span>
+                </button>
+                <button id="btnToggleSound" type="button" class="p-2 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 transition text-sm" title="تشغيل/كتم التنبيه الصوتي">
+                    <span id="soundIcon">🔊</span>
+                </button>
+                <button id="btnToggleTheme" type="button" class="p-2 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 transition text-sm" title="تبديل الوضع الليلي / النهاري">
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- شريط تنبيه المهام الحرجة (أقل من 24 ساعة) -->
+    <div id="urgent24hBanner" class="hidden bg-rose-600 text-white px-4 py-2.5 shadow-md">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
+            <div class="flex items-center gap-2 font-bold">
+                <span class="inline-block w-2.5 h-2.5 rounded-full bg-white animate-ping"></span>
+                <span id="urgent24hBannerText">تنبيه عاجل: لديك مهام يتبقى عليها أقل من 24 ساعة!</span>
+            </div>
+            <button id="btnDispatchUrgentNow" type="button" class="bg-white text-rose-700 hover:bg-rose-50 font-bold px-3 py-1 rounded-lg text-xs transition shadow-sm">
+                🔔 إرسال إشعار فوري للجهاز الآن
+            </button>
+        </div>
+    </div>
+
+    <!-- المحتوى الرئيسي -->
+    <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- القائمة الجانبية للإعدادات والأدوات السريعة (Sidebar) -->
+        <aside class="lg:col-span-3 space-y-5">
+            <!-- بطاقة إعدادات المنظم -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-bold text-base flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                        <span>⚙️</span>
+                        <span>إعدادات المنظّم الذكي</span>
+                    </h2>
+                    <span class="text-[11px] px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-300 font-semibold">C++ Engine</span>
+                </div>
+
+                <!-- شريط ساعات الفراغ اليومية -->
+                <div class="mb-5">
+                    <div class="flex justify-between items-center text-xs font-semibold mb-2">
+                        <label for="sliderFreeHours" class="text-slate-600 dark:text-slate-300">⏳ ساعات الفراغ المتاحة يومياً:</label>
+                        <span id="freeHoursBadge" class="px-2.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-indigo-300 font-bold">4.5 ساعة</span>
+                    </div>
+                    <input id="sliderFreeHours" type="range" min="1" max="12" step="0.5" value="4.5" class="w-full accent-indigo-600 cursor-pointer">
+                    <div class="flex justify-between text-[11px] text-slate-400 mt-1">
+                        <span>1 ساعة</span>
+                        <span>6 ساعات</span>
+                        <span>12 ساعة</span>
+                    </div>
+                </div>
+
+                <!-- قائمة منسدلة لسياسة توزيع المذاكرة (تحسين القوائم المنسدلة) -->
+                <div class="mb-5">
+                    <label for="selectStudyStrategy" class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
+                        🧠 استراتيجية محرك الجدولة (C++):
+                    </label>
+                    <select id="selectStudyStrategy" class="custom-select w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/90 px-3.5 py-2.5 text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                        <option value="balanced">متوازن (بحد أقصى 2.5 ساعة للمادة يومياً)</option>
+                        <option value="intensive">مكثف للطوارئ (حتى 4 ساعات للمهام العاجلة)</option>
+                        <option value="light">خفيف وموزع (جلسات قصيرة 1.5 ساعة لمنع الإرهاق)</option>
+                    </select>
+                </div>
+
+                <div class="border-t border-slate-100 dark:border-slate-800 my-4"></div>
+
+                <!-- أزرار إدارة البيانات -->
+                <div class="space-y-2.5">
+                    <button id="btnLoadSample" type="button" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-2">
+                        <span>📥</span>
+                        <span>تحميل بيانات تجريبية متكاملة</span>
+                    </button>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="btnExportJson" type="button" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition flex items-center justify-center gap-1.5">
+                            <span>📤</span>
+                            <span>تصدير JSON</span>
+                        </button>
+                        <label for="inputImportJson" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                            <span>📂</span>
+                            <span>استيراد JSON</span>
+                        </label>
+                        <input id="inputImportJson" type="file" accept=".json" class="hidden">
+                    </div>
+
+                    <button id="btnClearAll" type="button" class="w-full py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-300 font-semibold text-xs transition flex items-center justify-center gap-1.5 border border-rose-200/60 dark:border-rose-800/50">
+                        <span>🗑️</span>
+                        <span>مسح جميع البيانات</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- مؤقت بومودورو الذكي للمذاكرة -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold text-sm flex items-center gap-2">
+                        <span>⏱️</span>
+                        <span>مؤقت التركيز (Pomodoro)</span>
+                    </h3>
+                    <span id="pomoStateBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-semibold">جاهز للبدء</span>
+                </div>
+
+                <div class="mb-3">
+                    <select id="selectPomoMode" class="custom-select w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold">
+                        <option value="25">جلسة مذاكرة مركزة (25 دقيقة)</option>
+                        <option value="50">جلسة مذاكرة عميقة (50 دقيقة)</option>
+                        <option value="5">استراحة قصيرة (5 دقائق)</option>
+                        <option value="15">استراحة طويلة (15 دقيقة)</option>
+                    </select>
+                </div>
+
+                <div class="text-center py-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 mb-3">
+                    <div id="pomoTimerDisplay" class="text-3xl font-extrabold font-mono tracking-wider text-indigo-600 dark:text-indigo-400">
+                        25:00
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btnPomoStartPause" type="button" class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition">
+                        ▶️ ابدأ الجلسة
+                    </button>
+                    <button id="btnPomoReset" type="button" class="py-2 px-3 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition">
+                        🔄 إعادة ضبط
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- القسم الرئيسي (لوحة المؤشرات + التبويبات) -->
+        <main class="lg:col-span-9 space-y-6">
+
+            <!-- بطاقات المؤشرات الرئيسية (4 KPI Cards) -->
+            <section class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                        <span>📌 المهام المتبقية</span>
+                        <span id="kpiUrgent24Count" class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 text-[11px] font-bold">0 &lt;24h</span>
+                    </div>
+                    <div id="kpiPendingTasks" class="text-xl sm:text-2xl font-extrabold text-slate-800 dark:text-white mt-2">0 مهام</div>
+                    <div id="kpiCompletedSub" class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">تم إنجاز 0 مهمة</div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between">
+                    <div class="text-xs text-slate-500 dark:text-slate-400 font-semibold">⏰ الساعات المطلوبة</div>
+                    <div id="kpiTotalHours" class="text-xl sm:text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-2">0.0 ساعة</div>
+                    <div id="kpiDailyLoadSub" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">متاح 4.5 ساعة/يوم</div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between">
+                    <div class="text-xs text-slate-500 dark:text-slate-400 font-semibold">🔔 أقرب موعد تسليم</div>
+                    <div id="kpiNearestDue" class="text-xl sm:text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-2">لا يوجد</div>
+                    <div id="kpiNearestTaskTitle" class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-1">جميع مهامك منجزة</div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                        <span>📊 المعدل العام</span>
+                        <span id="kpiGpaBadge" class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 text-[11px] font-bold">GPA 0.00</span>
+                    </div>
+                    <div id="kpiAverageGrade" class="text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-2">غير مسجل</div>
+                    <div id="kpiGradeLetter" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">أضف درجاتك للتحليل</div>
+                </div>
+            </section>
+
+            <!-- شريط التبويبات التفاعلي (Navigation Tabs) -->
+            <nav class="bg-white dark:bg-slate-900 p-1.5 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-wrap gap-1.5" role="tablist">
+                <button type="button" data-tab="tab-alerts" class="tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-sm">
+                    <span>🔔</span>
+                    <span>التنبيهات والأولويات</span>
+                </button>
+                <button type="button" data-tab="tab-plan" class="tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <span>📅</span>
+                    <span>خطة المذاكرة الذكية</span>
+                </button>
+                <button type="button" data-tab="tab-inputs" class="tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <span>➕</span>
+                    <span>إدخال الجدول والمهام</span>
+                </button>
+                <button type="button" data-tab="tab-analytics" class="tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <span>📊</span>
+                    <span>تحليل الأداء والرسوم</span>
+                </button>
+                <button type="button" data-tab="tab-cpp" class="tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <span>⚡</span>
+                    <span>محرك C++ الخوارزمي</span>
+                </button>
+            </nav>
+
+            <!-- ========================================================= -->
+            <!-- التبويب الأول: التنبيهات والأولويات الذكية               -->
+            <!-- ========================================================= -->
+            <section id="tab-alerts" class="tab-panel space-y-5">
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <div>
+                            <h2 class="text-base sm:text-lg font-extrabold flex items-center gap-2">
+                                <span>🔔</span>
+                                <span>مركز التنبيهات والمواعيد القادمة</span>
+                            </h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                يتم ترتيب المهام تلقائياً حسب مؤشر الأولوية (النوع + الصعوبة + الساعات المتبقية) مع تنبيه حي للمهام أقل من 24 ساعة.
+                            </p>
+                        </div>
+
+                        <!-- فلاتر وقوائم منسدلة محسنة لتصفية المهام -->
+                        <div class="flex flex-wrap items-center gap-2">
+                            <select id="filterTaskSubject" class="custom-select rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold">
+                                <option value="ALL">جميع المواد الدراسية</option>
+                            </select>
+                            <select id="filterTaskType" class="custom-select rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold">
+                                <option value="ALL">كل الأنواع</option>
+                                <option value="اختبار">🎯 اختبار</option>
+                                <option value="مشروع">💻 مشروع</option>
+                                <option value="واجب">📝 واجب</option>
+                                <option value="مراجعة">📖 مراجعة</option>
+                            </select>
+                            <select id="filterTaskUrgency" class="custom-select rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold">
+                                <option value="ACTIVE">المهام الجارية (غير المكتملة)</option>
+                                <option value="URGENT24">🚨 أقل من 24 ساعة فقط</option>
+                                <option value="COMPLETED">✅ المكتملة فقط</option>
+                                <option value="ALL">عرض الكل</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- بطاقات التنبيهات الملونة -->
+                    <div id="alertsCardsContainer" class="space-y-3 mb-6"></div>
+
+                    <!-- جدول الأولويات التفصيلي -->
+                    <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                        <table class="w-full text-right text-xs sm:text-sm">
+                            <thead class="bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 font-bold">
+                                <tr>
+                                    <th class="py-3 px-3">المهمة</th>
+                                    <th class="py-3 px-3">المادة</th>
+                                    <th class="py-3 px-3">النوع</th>
+                                    <th class="py-3 px-3">الموعد النهائي</th>
+                                    <th class="py-3 px-3">الوقت المتبقي</th>
+                                    <th class="py-3 px-3">الساعات</th>
+                                    <th class="py-3 px-3">الصعوبة</th>
+                                    <th class="py-3 px-3">نقاط الأولوية</th>
+                                    <th class="py-3 px-3 text-center">إجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody id="priorityTableBody" class="divide-y divide-slate-200/70 dark:divide-slate-800"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- شريط الإنجاز السريع عبر القائمة المنسدلة (كما في البرنامج الأصلي مع تحسينه) -->
+                    <div class="mt-5 p-4 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex-1 min-w-[220px]">
+                            <label for="quickCompleteSelect" class="block text-xs font-bold text-indigo-900 dark:text-indigo-200 mb-1">
+                                ✔️ اختر مهمة من القائمة المنسدلة لتمييزها كمكتملة فوراً:
+                            </label>
+                            <select id="quickCompleteSelect" class="custom-select w-full rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs sm:text-sm font-semibold"></select>
+                        </div>
+                        <button id="btnQuickCompleteTask" type="button" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-sm transition">
+                            ✔️ تم إنجاز هذه المهمة
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================= -->
+            <!-- التبويب الثاني: خطة المذاكرة الذكية والجدول الدراسي        -->
+            <!-- ========================================================= -->
+            <section id="tab-plan" class="tab-panel hidden space-y-5">
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <div>
+                            <h2 class="text-base sm:text-lg font-extrabold flex items-center gap-2">
+                                <span>📚</span>
+                                <span>جدول المذاكرة المقترح لـ 14 يوماً</span>
+                                <span id="planHoursHeaderBadge" class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-bold">4.5 ساعات يومياً</span>
+                            </h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                تم إصلاح خطأ السطر النصي وأسماء الأيام ليظهر الجدول بالعربية الفصحى مع مراعاة كثافة المحاضرات اليومية.
+                            </p>
+                        </div>
+                        <select id="filterPlanDay" class="custom-select rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold">
+                            <option value="ALL">عرض خطة الـ 14 يوماً كاملة</option>
+                            <option value="3">أقرب 3 أيام فقط</option>
+                            <option value="7">الأسبوع الأول (7 أيام)</option>
+                        </select>
+                    </div>
+
+                    <div id="studyPlanContainer" class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                        <table class="w-full text-right text-xs sm:text-sm">
+                            <thead class="bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 font-bold">
+                                <tr>
+                                    <th class="py-3 px-3">التاريخ</th>
+                                    <th class="py-3 px-3">اليوم</th>
+                                    <th class="py-3 px-3">المادة</th>
+                                    <th class="py-3 px-3">المهمة المجدولة</th>
+                                    <th class="py-3 px-3">الساعات المقترحة</th>
+                                    <th class="py-3 px-3">مؤشر الأولوية</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studyPlanTableBody" class="divide-y divide-slate-200/70 dark:divide-slate-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- الجدول الدراسي الأسبوعي -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                        <h3 class="text-base font-extrabold flex items-center gap-2">
+                            <span>🗓️</span>
+                            <span>الجدول الدراسي الأسبوعي للمحاضرات</span>
+                        </h3>
+                        <select id="filterScheduleDay" class="custom-select rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold">
+                            <option value="ALL">كل أيام الأسبوع</option>
+                            <option value="الأحد">الأحد</option>
+                            <option value="الإثنين">الإثنين</option>
+                            <option value="الثلاثاء">الثلاثاء</option>
+                            <option value="الأربعاء">الأربعاء</option>
+                            <option value="الخميس">الخميس</option>
+                        </select>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                        <table class="w-full text-right text-xs sm:text-sm">
+                            <thead class="bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 font-bold">
+                                <tr>
+                                    <th class="py-3 px-3">اليوم</th>
+                                    <th class="py-3 px-3">المادة</th>
+                                    <th class="py-3 px-3">وقت البداية</th>
+                                    <th class="py-3 px-3">وقت النهاية</th>
+                                    <th class="py-3 px-3">المدة</th>
+                                    <th class="py-3 px-3 text-center">حذف</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scheduleTableBody" class="divide-y divide-slate-200/70 dark:divide-slate-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================= -->
+            <!-- التبويب الثالث: إدخال الجدول والمهام                      -->
+            <!-- ========================================================= -->
+            <section id="tab-inputs" class="tab-panel hidden space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- نموذج إضافة اختبار أو واجب -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800">
+                        <h3 class="text-base font-extrabold mb-1 flex items-center gap-2">
+                            <span>📝</span>
+                            <span>إضافة اختبار أو مشروع أو واجب</span>
+                        </h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                            إذا كان موعد التسليم خلال أقل من 24 ساعة، سيقوم النظام بإرسال إشعار فوري لجهازك!
+                        </p>
+
+                        <form id="formAddTask" class="space-y-3.5">
+                            <div>
+                                <label for="inputTaskTitle" class="block text-xs font-bold mb-1">عنوان المهمة *</label>
+                                <input id="inputTaskTitle" type="text" required placeholder="مثال: الاختبار النصفي للفصل الثالث" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label for="selectTaskSubjectPreset" class="block text-xs font-bold mb-1">اختر المادة أو اكتب مادة جديدة *</label>
+                                    <select id="selectTaskSubjectPreset" class="custom-select w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs sm:text-sm font-semibold">
+                                        <option value="__CUSTOM__">+ كتابة مادة جديدة...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="inputTaskSubject" class="block text-xs font-bold mb-1">اسم المادة *</label>
+                                    <input id="inputTaskSubject" type="text" required placeholder="مثال: الذكاء الاصطناعي" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label for="selectTaskType" class="block text-xs font-bold mb-1">نوع المهمة (قائمة منسدلة)</label>
+                                    <select id="selectTaskType" class="custom-select w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs sm:text-sm font-semibold">
+                                        <option value="اختبار">🎯 اختبار (وزن 3.0)</option>
+                                        <option value="مشروع">💻 مشروع (وزن 2.5)</option>
+                                        <option value="واجب">📝 واجب (وزن 1.5)</option>
+                                        <option value="مراجعة">📖 مراجعة ذاتية (وزن 1.2)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="selectTaskDifficulty" class="block text-xs font-bold mb-1">درجة الصعوبة (1 - 5)</label>
+                                    <select id="selectTaskDifficulty" class="custom-select w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs sm:text-sm font-semibold">
+                                        <option value="1">1 — سهل جداً ⭐</option>
+                                        <option value="2">2 — سهل ⭐⭐</option>
+                                        <option value="3" selected>3 — متوسط ⭐⭐⭐</option>
+                                        <option value="4">4 — صعب ⭐⭐⭐⭐</option>
+                                        <option value="5">5 — متقدم وحرج ⭐⭐⭐⭐⭐</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div class="sm:col-span-1">
+                                    <label for="inputTaskDueDate" class="block text-xs font-bold mb-1">تاريخ التسليم *</label>
+                                    <input id="inputTaskDueDate" type="date" required class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs sm:text-sm">
+                                </div>
+                                <div class="sm:col-span-1">
+                                    <label for="inputTaskDueTime" class="block text-xs font-bold mb-1">وقت التسليم *</label>
+                                    <input id="inputTaskDueTime" type="time" value="14:00" required class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs sm:text-sm">
+                                </div>
+                                <div class="sm:col-span-1">
+                                    <label for="inputTaskEstHours" class="block text-xs font-bold mb-1">الساعات التقديرية</label>
+                                    <input id="inputTaskEstHours" type="number" min="0.5" max="50" step="0.5" value="3.0" required class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs sm:text-sm">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-sm transition">
+                                ➕ إضافة المهمة وحساب الأولوية
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- نموذج إضافة محاضرة للجدول -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800">
+                        <h3 class="text-base font-extrabold mb-1 flex items-center gap-2">
+                            <span>🏫</span>
+                            <span>إضافة محاضرة للجدول الأسبوعي</span>
+                        </h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                            تم التحقق من أوقات المحاضرات لمنع إدخال وقت نهاية يسبق وقت البداية أو تعارض الأوقات.
+                        </p>
+
+                        <form id="formAddSchedule" class="space-y-3.5">
+                            <div>
+                                <label for="selectScheduleDay" class="block text-xs font-bold mb-1">اليوم الدراسي</label>
+                                <select id="selectScheduleDay" class="custom-select w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs sm:text-sm font-semibold">
+                                    <option value="الأحد">الأحد</option>
+                                    <option value="الإثنين">الإثنين</option>
+                                    <option value="الثلاثاء">الثلاثاء</option>
+                                    <option value="الأربعاء">الأربعاء</option>
+                                    <option value="الخميس">الخميس</option>
+                                    <option value="السبت">السبت</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="inputScheduleSubject" class="block text-xs font-bold mb-1">اسم المادة *</label>
+                                <input id="inputScheduleSubject" type="text" required placeholder="مثال: برمجة بايثون أو هياكل البيانات C++" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label for="inputScheduleStart" class="block text-xs font-bold mb-1">وقت البداية *</label>
+                                    <input id="inputScheduleStart" type="time" value="08:00" required class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs sm:text-sm">
+                                </div>
+                                <div>
+                                    <label for="inputScheduleEnd" class="block text-xs font-bold mb-1">وقت النهاية *</label>
+                                    <input id="inputScheduleEnd" type="time" value="10:00" required class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs sm:text-sm">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-sm transition">
+                                ➕ إضافة المحاضرة للجدول
+                            </button>
+                        </form>
+
+                        <div class="mt-6 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/50 text-xs text-amber-900 dark:text-amber-200 space-y-1">
+                            <div class="font-bold flex items-center gap-1.5">
+                                <span>💡</span>
+                                <span>ميزة ذكية مدمجة:</span>
+                            </div>
+                            <p>يقوم محرك الجدولة بحساب إجمالي ساعات محاضراتك في كل يوم، فإذا كان يومك مزدحماً بالمحاضرات يقلل النظام ساعات المذاكرة المقترحة فيه تلقائياً لمنع الإرهاق!</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================= -->
+            <!-- التبويب الرابع: تحليل الأداء والرسوم البيانية              -->
+            <!-- ========================================================= -->
+            <section id="tab-analytics" class="tab-panel hidden space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800">
+                        <h3 class="text-sm sm:text-base font-extrabold mb-3 flex items-center gap-2">
+                            <span>📈</span>
+                            <span>مستوى الأداء في المواد (%)</span>
+                        </h3>
+                        <div class="relative h-72 w-full">
+                            <canvas id="gradesBarChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800">
+                        <h3 class="text-sm sm:text-base font-extrabold mb-3 flex items-center gap-2">
+                            <span>⏳</span>
+                            <span>توزيع ساعات المذاكرة المطلوبة حسب المادة</span>
+                        </h3>
+                        <div class="relative h-72 w-full">
+                            <canvas id="hoursDoughnutChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تسجيل درجة جديدة + سجل الدرجات -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800">
+                    <h3 class="text-base font-extrabold mb-3 flex items-center gap-2">
+                        <span>🏅</span>
+                        <span>تسجيل درجة جديدة (مع التحقق التلقائي من صحة الدرجة)</span>
+                    </h3>
+
+                    <form id="formAddGrade" class="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end mb-6">
+                        <div>
+                            <label for="inputGradeSubject" class="block text-xs font-bold mb-1">المادة *</label>
+                            <input id="inputGradeSubject" type="text" required placeholder="مثال: برمجة بايثون" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="selectGradeAssessment" class="block text-xs font-bold mb-1">نوع التقييم</label>
+                            <select id="selectGradeAssessment" class="custom-select w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs sm:text-sm font-semibold">
+                                <option value="الاختبار الأول">الاختبار الأول</option>
+                                <option value="الاختبار النصفي">الاختبار النصفي</option>
+                                <option value="اختبار قصير (Quiz)">اختبار قصير (Quiz)</option>
+                                <option value="واجب عملي">واجب عملي</option>
+                                <option value="مشروع فصلي">مشروع فصلي</option>
+                                <option value="الاختبار النهائي">الاختبار النهائي</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="inputGradeScore" class="block text-xs font-bold mb-1">درجتك *</label>
+                            <input id="inputGradeScore" type="number" min="0" max="100" step="0.5" value="18.5" required class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="inputGradeMax" class="block text-xs font-bold mb-1">الدرجة العظمى *</label>
+                            <input id="inputGradeMax" type="number" min="1" max="100" step="0.5" value="20" required class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs sm:text-sm">
+                        </div>
+                        <button type="submit" class="py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-sm transition">
+                            💾 حفظ الدرجة
+                        </button>
+                    </form>
+
+                    <!-- جدول سجل الدرجات -->
+                    <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                        <table class="w-full text-right text-xs sm:text-sm">
+                            <thead class="bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 font-bold">
+                                <tr>
+                                    <th class="py-2.5 px-3">المادة</th>
+                                    <th class="py-2.5 px-3">التقييم</th>
+                                    <th class="py-2.5 px-3">الدرجة</th>
+                                    <th class="py-2.5 px-3">النسبة المئوية</th>
+                                    <th class="py-2.5 px-3">التقدير</th>
+                                    <th class="py-2.5 px-3 text-center">حذف</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gradesTableBody" class="divide-y divide-slate-200/70 dark:divide-slate-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================= -->
+            <!-- التبويب الخامس: محرك C++ للعمليات المعقدة والأخطاء المصلحة -->
+            <!-- ========================================================= -->
+            <section id="tab-cpp" class="tab-panel hidden space-y-5">
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <div>
+                            <h2 class="text-base sm:text-lg font-extrabold flex items-center gap-2">
+                                <span>⚡</span>
+                                <span>بنية النظام المعمارية (HTML + JavaScript + C++17)</span>
+                            </h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                ملخص الأخطاء البرمجية التي تم إصلاحها من الكود الأول وكيفية عمل محرك C++ للعمليات المعقدة.
+                            </p>
+                        </div>
+                        <button id="btnCopyCppCode" type="button" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition flex items-center gap-1.5">
+                            <span>📋</span>
+                            <span>نسخ كود محرك C++</span>
+                        </button>
+                    </div>
+
+                    <!-- بطاقات الأخطاء التي تم إصلاحها -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 mb-5 text-xs">
+                        <div class="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60">
+                            <div class="font-bold text-emerald-800 dark:text-emerald-300 mb-1">✅ 1. إصلاح خطأ `SyntaxError` في دالة `generate_study_plan`</div>
+                            <p class="text-slate-600 dark:text-slate-300">في الكود الأول كان السطر <code>- "المهمة": f"{task['type']}\n{task['title']}"</code> يحتوي على علامة ناقص بالبداية وكسر سطر غير مسموح داخل نص `f-string` مما يسبب توقف البرنامج.</p>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60">
+                            <div class="font-bold text-emerald-800 dark:text-emerald-300 mb-1">✅ 2. دقة حساب الساعات المتبقية وإشعار الـ 24 ساعة الحقيقي</div>
+                            <p class="text-slate-600 dark:text-slate-300">بدلاً من حساب الأيام فقط (`days_left`)، يحسب المحرك الآن الساعات والدقائق المتبقية بدقة ويرسل إشعاراً حقيقياً للهاتف والكمبيوتر عبر `Notification API` عند بقاء أقل من 24 ساعة.</p>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60">
+                            <div class="font-bold text-emerald-800 dark:text-emerald-300 mb-1">✅ 3. تعريب أيام الأسبوع ومنع الأخطاء المنطقية بالدرجات والجدول</div>
+                            <p class="text-slate-600 dark:text-slate-300">استبدال `strftime("%A")` الذي كان يطبع الأيام بالإنجليزية بأسماء عربية أصيلة، مع منع إدخال درجة طالب أكبر من الدرجة العظمى أو محاضرة ينتهي وقتها قبل بدايتها.</p>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60">
+                            <div class="font-bold text-emerald-800 dark:text-emerald-300 mb-1">✅ 4. إمكانية التراجع والحذف والتصفية عبر قوائم منسدلة</div>
+                            <p class="text-slate-600 dark:text-slate-300">إضافة قوائم منسدلة لتصفية المهام حسب المادة والنوع والحالة، مع إمكانية إعادة فتح مهمة مكتملة أو حذف مهمة أو محاضرة أو درجة مفردة دون مسح كل البيانات.</p>
+                        </div>
+                    </div>
+
+                    <!-- محاكي مخرجات محرك C++ الفوري على البيانات الحالية -->
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">🖥️ المخرجات الحية لمحرك الخوارزميات (JSON من بياناتك الحالية):</span>
+                            <span class="text-[11px] text-indigo-600 dark:text-indigo-400 font-mono">SmartStudentEngine::computePrioritizedTasks()</span>
+                        </div>
+                        <pre id="cppLiveOutputPre" dir="ltr" class="p-4 rounded-xl bg-slate-900 text-emerald-300 font-mono text-xs overflow-x-auto max-h-56"></pre>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- نافذة تأكيد مخصصة داخل الصفحة (بدلاً من confirm/alert التقليدية) -->
+    <div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800">
+            <h3 id="confirmModalTitle" class="text-base font-extrabold text-slate-900 dark:text-white mb-2">تأكيد الإجراء</h3>
+            <p id="confirmModalMessage" class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mb-5"></p>
+            <div class="flex items-center justify-end gap-2">
+                <button id="btnModalCancel" type="button" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold">إلغاء</button>
+                <button id="btnModalConfirm" type="button" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold">نعم، تأكيد</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- البرمجة التفاعلية ومحرك الجدولة والإشعارات (JavaScript ES6+)      -->
+    <!-- ================================================================= -->
+    <script>
+        (function () {
+            'use strict';
+
+            const STORAGE_KEY = 'smart_student_organizer_v2_data';
+            const NOTIFIED_KEY = 'smart_student_notified_24h_ids';
+
+            const ARABIC_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+
+            const MOTIVATIONAL_QUOTES = [
+                '«النجاح هو محصلة مجهودات صغيرة تتكرر يومياً باجتهاد وتنظيم.»',
+                '«ترتيب أولوياتك اليوم يوفر عليك ساعات من القلق غداً — ابدأ بالمهمة الأعلى أولوية!»',
+                '«كل ساعة تركيز تقضيها الآن تقربك خطوة واثقة نحو تفوقك الأكاديمي.»',
+                '«لا تؤجل عمل اليوم إلى الغد؛ قسّم المشاريع الكبيرة إلى جلسات يومية مريحة.»'
+            ];
+
+            let soundEnabled = true;
+            let gradesChartInstance = null;
+            let hoursChartInstance = null;
+            let pendingConfirmCallback = null;
+
+            // مؤقت بومودورو
+            let pomoInterval = null;
+            let pomoRunning = false;
+            let pomoRemainingSeconds = 25 * 60;
+
+            // توليد تاريخ بصيغة YYYY-MM-DD مع إزاحة بالأيام
+            function getOffsetDateString(daysOffset) {
+                const d = new Date();
+                d.setDate(d.getDate() + daysOffset);
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            }
+
+            // توليد وقت بعد عدد معين من الساعات (لاختبار مهمة < 24 ساعة)
+            function getOffsetDateTimeParts(hoursOffset) {
+                const d = new Date(Date.now() + hoursOffset * 3600 * 1000);
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                const hh = String(d.getHours()).padStart(2, '0');
+                const min = String(d.getMinutes()).padStart(2, '0');
+                return { date: `${yyyy}-${mm}-${dd}`, time: `${hh}:${min}` };
+            }
+
+            // البيانات التجريبية الافتراضية (تتضمن مهمة عاجلة بعد 16 ساعة لتفعيل إشعار < 24 ساعة مباشرة)
+            function createSampleData() {
+                const urgent16h = getOffsetDateTimeParts(16);
+                return {
+                    daily_free_hours: 4.5,
+                    strategy: 'balanced',
+                    schedule: [
+                        { id: 101, day: 'الأحد', subject: 'برمجة بايثون', start_time: '08:00', end_time: '10:00' },
+                        { id: 102, day: 'الإثنين', subject: 'قواعد البيانات SQL', start_time: '10:00', end_time: '12:00' },
+                        { id: 103, day: 'الثلاثاء', subject: 'الإحصاء والاحتمالات', start_time: '09:00', end_time: '11:00' },
+                        { id: 104, day: 'الأربعاء', subject: 'الذكاء الاصطناعي', start_time: '11:00', end_time: '13:00' },
+                        { id: 105, day: 'الخميس', subject: 'برمجة C++ المتقدمة', start_time: '09:00', end_time: '11:00' }
+                    ],
+                    tasks: [
+                        {
+                            id: 1,
+                            title: 'الاختبار النصفي',
+                            subject: 'الإحصاء والاحتمالات',
+                            type: 'اختبار',
+                            due_date: urgent16h.date,
+                            due_time: urgent16h.time,
+                            est_hours: 6.0,
+                            difficulty: 5,
+                            completed: false
+                        },
+                        {
+                            id: 2,
+                            title: 'تصميم قاعدة بيانات',
+                            subject: 'قواعد البيانات SQL',
+                            type: 'مشروع',
+                            due_date: getOffsetDateString(4),
+                            due_time: '23:59',
+                            est_hours: 5.0,
+                            difficulty: 4,
+                            completed: false
+                        },
+                        {
+                            id: 3,
+                            title: 'تحليل البيانات بـ Pandas',
+                            subject: 'برمجة بايثون',
+                            type: 'واجب',
+                            due_date: getOffsetDateString(6),
+                            due_time: '20:00',
+                            est_hours: 3.0,
+                            difficulty: 3,
+                            completed: false
+                        },
+                        {
+                            id: 4,
+                            title: 'اختبار قصير (Quiz 2)',
+                            subject: 'الذكاء الاصطناعي',
+                            type: 'اختبار',
+                            due_date: getOffsetDateString(9),
+                            due_time: '11:00',
+                            est_hours: 4.0,
+                            difficulty: 4,
+                            completed: false
+                        }
+                    ],
+                    grades: [
+                        { id: 201, subject: 'برمجة بايثون', assessment: 'الاختبار الأول', score: 19.0, max_score: 20.0, percentage: 95.0 },
+                        { id: 202, subject: 'قواعد البيانات SQL', assessment: 'الاختبار الأول', score: 17.5, max_score: 20.0, percentage: 87.5 },
+                        { id: 203, subject: 'الإحصاء والاحتمالات', assessment: 'الاختبار الأول', score: 15.0, max_score: 20.0, percentage: 75.0 },
+                        { id: 204, subject: 'الذكاء الاصطناعي', assessment: 'واجب عملي', score: 9.0, max_score: 10.0, percentage: 90.0 }
+                    ]
+                };
+            }
+
+            let appState = loadState();
+
+            function loadState() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (parsed && Array.isArray(parsed.tasks)) {
+                            return parsed;
+                        }
+                    }
+                } catch (e) {
+                    // تجاهل أخطاء التخزين في حال التصفح الخاص
+                }
+                return createSampleData();
+            }
+
+            function saveState() {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+                } catch (e) {
+                    // تجاهل أخطاء التخزين
+                }
+            }
+
+            // تنبيه صوتي لطيف عبر Web Audio API عند إرسال إشعار
+            function playAlertChime() {
+                if (!soundEnabled) return;
+                try {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioCtx) return;
+                    const ctx = new AudioCtx();
+                    const now = ctx.currentTime;
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(587.33, now); // D5
+                    osc.frequency.setValueAtTime(880, now + 0.14); // A5
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.45);
+                } catch (e) {
+                    // قد يتطلب المتصفح نقرة من المستخدم أولاً
+                }
+            }
+
+            // إظهار إشعار منبثق داخل الواجهة (Toast)
+            function showToast(title, message, variant = 'indigo') {
+                const container = document.getElementById('toastContainer');
+                if (!container) return;
+
+                const colors = {
+                    indigo: 'bg-indigo-600 border-indigo-400 text-white',
+                    emerald: 'bg-emerald-600 border-emerald-400 text-white',
+                    rose: 'bg-rose-600 border-rose-300 text-white',
+                    amber: 'bg-amber-500 border-amber-300 text-slate-950'
+                };
+
+                const toast = document.createElement('div');
+                toast.className = `pointer-events-auto rounded-2xl p-3.5 shadow-xl border ${colors[variant] || colors.indigo} transition-all duration-300 flex items-start justify-between gap-3`;
+                toast.innerHTML = `
+                    <div>
+                        <div class="font-extrabold text-xs sm:text-sm">${title}</div>
+                        <div class="text-xs opacity-95 mt-0.5">${message}</div>
+                    </div>
+                    <button type="button" class="text-sm font-bold opacity-80 hover:opacity-100 px-1">✕</button>
+                `;
+                toast.querySelector('button').addEventListener('click', () => toast.remove());
+                container.appendChild(toast);
+
+                setTimeout(() => {
+                    if (toast.parentNode) toast.remove();
+                }, 5500);
+            }
+
+            // نافذة التأكيد المخصصة
+            function openConfirmModal(title, message, onConfirm) {
+                const modal = document.getElementById('confirmModal');
+                document.getElementById('confirmModalTitle').textContent = title;
+                document.getElementById('confirmModalMessage').textContent = message;
+                pendingConfirmCallback = onConfirm;
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            function closeConfirmModal() {
+                const modal = document.getElementById('confirmModal');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                pendingConfirmCallback = null;
+            }
+
+            // =================================================================
+            // محرك الحسابات والخوارزميات المطابق لمحرك C++ (SmartStudentEngine)
+            // =================================================================
+            function computeHoursLeft(dueDateStr, dueTimeStr) {
+                const timePart = dueTimeStr || '23:59';
+                const target = new Date(`${dueDateStr}T${timePart}:00`);
+                const diffMs = target.getTime() - Date.now();
+                return diffMs / (1000 * 3600);
+            }
+
+            function getPrioritizedTasks() {
+                const typeWeights = { 'اختبار': 3.0, 'مشروع': 2.5, 'واجب': 1.5, 'مراجعة': 1.2 };
+                const enriched = [];
+
+                appState.tasks.forEach((task, idx) => {
+                    const hoursLeft = computeHoursLeft(task.due_date, task.due_time);
+                    const daysLeft = Math.ceil(hoursLeft / 24);
+                    const weight = typeWeights[task.type] || 1.2;
+
+                    let urgencyScore = 0;
+                    let urgencyCategory = 'scheduled';
+                    if (hoursLeft <= 0) {
+                        urgencyScore = 120.0;
+                        urgencyCategory = 'overdue';
+                    } else if (hoursLeft <= 24) {
+                        urgencyScore = 100.0 + (24 - hoursLeft) * 1.5;
+                        urgencyCategory = 'under24h';
+                    } else if (daysLeft <= 3) {
+                        urgencyScore = Math.round((55.0 / daysLeft) * 10) / 10;
+                        urgencyCategory = 'within3d';
+                    } else if (daysLeft <= 7) {
+                        urgencyScore = Math.round((50.0 / daysLeft) * 10) / 10;
+                        urgencyCategory = 'within7d';
+                    } else {
+                        urgencyScore = Math.round((50.0 / Math.max(1, daysLeft)) * 10) / 10;
+                        urgencyCategory = 'scheduled';
+                    }
+
+                    const workloadFactor = Math.min(task.est_hours * 1.5, 18.0);
+                    const priorityScore = Math.round(((weight * 10) + (task.difficulty * 5) + urgencyScore + workloadFactor) * 10) / 10;
+
+                    enriched.push({
+                        ...task,
+                        original_index: idx,
+                        hours_left: Math.round(hoursLeft * 10) / 10,
+                        days_left: daysLeft,
+                        priority_score: priorityScore,
+                        urgency_category: urgencyCategory
+                    });
+                });
+
+                enriched.sort((a, b) => {
+                    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                    if (Math.abs(b.priority_score - a.priority_score) > 0.05) {
+                        return b.priority_score - a.priority_score;
+                    }
+                    return a.hours_left - b.hours_left;
+                });
+
+                return enriched;
+            }
+
+            // حساب مدة المحاضرة بالساعات
+            function getLectureDurationHours(startStr, endStr) {
+                const [sh, sm] = startStr.split(':').map(Number);
+                const [eh, em] = endStr.split(':').map(Number);
+                const diff = (eh * 60 + em) - (sh * 60 + sm);
+                return Math.max(0, Math.round((diff / 60) * 10) / 10);
+            }
+
+            // توليد خطة المذاكرة لـ 14 يوماً
+            function generateStudyPlan(prioritizedTasks) {
+                const activeTasks = prioritizedTasks
+                    .filter(t => !t.completed && t.hours_left > -12)
+                    .map(t => ({ ...t, remaining_est: Number(t.est_hours) }));
+
+                const lectureLoadByDay = {};
+                appState.schedule.forEach(lec => {
+                    const dur = getLectureDurationHours(lec.start_time, lec.end_time);
+                    lectureLoadByDay[lec.day] = (lectureLoadByDay[lec.day] || 0) + dur;
+                });
+
+                const strategy = appState.strategy || 'balanced';
+                const maxSessionCap = strategy === 'intensive' ? 4.0 : (strategy === 'light' ? 1.5 : 2.5);
+
+                const rows = [];
+                const today = new Date();
+
+                for (let offset = 0; offset < 14; offset++) {
+                    const d = new Date(today);
+                    d.setDate(today.getDate() + offset);
+                    const yyyy = d.getFullYear();
+                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                    const dd = String(d.getDate()).padStart(2, '0');
+                    const dateStr = `${yyyy}-${mm}-${dd}`;
+                    const arabicDay = ARABIC_DAYS[d.getDay()];
+
+                    const lectureHrs = lectureLoadByDay[arabicDay] || 0;
+                    const fatiguePenalty = lectureHrs > 4 ? Math.min(1.5, (lectureHrs - 4) * 0.5) : 0;
+                    let availableHours = Math.max(1.0, Number(appState.daily_free_hours) - fatiguePenalty);
+
+                    for (const task of activeTasks) {
+                        if (task.remaining_est <= 0.05) continue;
+                        const maxDayOffset = Math.max(0, task.days_left);
+                        if (offset <= maxDayOffset && availableHours > 0.05) {
+                            const sessionCap = task.hours_left <= 24 ? Math.max(maxSessionCap, 3.5) : maxSessionCap;
+                            let allocated = Math.min(availableHours, task.remaining_est, sessionCap);
+                            allocated = Math.round(allocated * 2) / 2;
+                            if (allocated <= 0 && task.remaining_est > 0) {
+                                allocated = Math.min(availableHours, task.remaining_est);
+                            }
+                            if (allocated > 0) {
+                                task.remaining_est = Math.round((task.remaining_est - allocated) * 10) / 10;
+                                availableHours = Math.round((availableHours - allocated) * 10) / 10;
+                                rows.push({
+                                    day_offset: offset,
+                                    date: dateStr,
+                                    day_name: arabicDay,
+                                    subject: task.subject,
+                                    task_display: `${task.type}: ${task.title}`,
+                                    allocated_hours: Math.round(allocated * 10) / 10,
+                                    priority_score: task.priority_score
+                                });
+                            }
+                        }
+                    }
+                }
+                return rows;
+            }
+
+            // =================================================================
+            // نظام الإشعارات الحقيقي (Browser / Device Notification API)
+            // =================================================================
+            function updateNotificationButtonUI() {
+                const label = document.getElementById('notifStatusLabel');
+                const btn = document.getElementById('btnEnableNotifications');
+                if (!('Notification' in window)) {
+                    label.textContent = 'تنبيهات داخلية مفعلة';
+                    return;
+                }
+                if (Notification.permission === 'granted') {
+                    label.textContent = 'إشعارات الجهاز مفعلة ✅';
+                    btn.className = 'flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl bg-emerald-400 text-slate-950 hover:bg-emerald-300 transition shadow-sm';
+                } else if (Notification.permission === 'denied') {
+                    label.textContent = 'الإشعارات محظورة من المتصفح';
+                } else {
+                    label.textContent = 'تفعيل إشعارات الجهاز (< 24 ساعة)';
+                }
+            }
+
+            function sendRealSystemNotification(title, bodyText) {
+                playAlertChime();
+                showToast(title, bodyText, 'rose');
+
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    try {
+                        new Notification(title, {
+                            body: bodyText,
+                            dir: 'rtl',
+                            lang: 'ar',
+                            tag: 'smart-student-urgent-' + Date.now()
+                        });
+                    } catch (err) {
+                        // في حال كان المتصفح على الهاتف يتطلب ServiceWorker، يكفي التنبيه الفوري والصوتي
+                    }
+                }
+            }
+
+            function checkAndTrigger24HourNotifications(prioritizedTasks, forceNotify = false) {
+                const urgentTasks = prioritizedTasks.filter(t => !t.completed && t.hours_left > 0 && t.hours_left <= 24);
+                const banner = document.getElementById('urgent24hBanner');
+                const bannerText = document.getElementById('urgent24hBannerText');
+
+                if (urgentTasks.length > 0) {
+                    banner.classList.remove('hidden');
+                    const titles = urgentTasks.map(t => `«${t.title} (${t.subject}) — متبقي ${t.hours_left} ساعة»`).join(' ، ');
+                    bannerText.textContent = `🚨 تنبيه عاجل (أقل من 24 ساعة): لديك ${urgentTasks.length} مهمة حرجة: ${titles}`;
+                } else {
+                    banner.classList.add('hidden');
+                }
+
+                let notifiedIds = [];
+                try {
+                    notifiedIds = JSON.parse(sessionStorage.getItem(NOTIFIED_KEY) || '[]');
+                } catch (e) {
+                    notifiedIds = [];
+                }
+
+                urgentTasks.forEach(task => {
+                    if (forceNotify || !notifiedIds.includes(task.id)) {
+                        sendRealSystemNotification(
+                            `🚨 تنبيه عاجل: متبقي أقل من 24 ساعة!`,
+                            `مهمة [${task.type}] ${task.title} في مادة ${task.subject} مستحقة خلال ${task.hours_left} ساعة فقط!`
+                        );
+                        if (!notifiedIds.includes(task.id)) {
+                            notifiedIds.push(task.id);
+                        }
+                    }
+                });
+
+                try {
+                    sessionStorage.setItem(NOTIFIED_KEY, JSON.stringify(notifiedIds));
+                } catch (e) {}
+            }
+
+            // =================================================================
+            // تحديث الواجهة بالكامل (Render Functions)
+            // =================================================================
+            function formatTimeRemainingBadge(hoursLeft, daysLeft) {
+                if (hoursLeft <= 0) {
+                    return `<span class="px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200 font-bold text-xs">🚨 متأخر (${Math.abs(hoursLeft)} س)</span>`;
+                }
+                if (hoursLeft <= 24) {
+                    return `<span class="px-2.5 py-1 rounded-full bg-rose-600 text-white font-bold text-xs urgent-24h-pulse">🔔 ${hoursLeft} ساعة فقط!</span>`;
+                }
+                if (daysLeft <= 3) {
+                    return `<span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200 font-bold text-xs">⚠️ ${daysLeft} أيام (${Math.round(hoursLeft)} س)</span>`;
+                }
+                return `<span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 font-semibold text-xs">📅 ${daysLeft} يوم</span>`;
+            }
+
+            function renderAll(triggerAutoNotify = false) {
+                const prioritized = getPrioritizedTasks();
+                const activeTasks = prioritized.filter(t => !t.completed);
+                const completedCount = prioritized.filter(t => t.completed).length;
+                const urgent24Count = activeTasks.filter(t => t.hours_left > 0 && t.hours_left <= 24).length;
+
+                // 1. تحديث بطاقات المؤشرات العلوية
+                const totalPendingHours = activeTasks.reduce((acc, t) => acc + Number(t.est_hours), 0);
+                document.getElementById('kpiPendingTasks').textContent = `${activeTasks.length} مهام`;
+                document.getElementById('kpiUrgent24Count').textContent = `${urgent24Count} <24h`;
+                document.getElementById('kpiCompletedSub').textContent = `تم إنجاز ${completedCount} مهمة بنجاح`;
+                document.getElementById('kpiTotalHours').textContent = `${totalPendingHours.toFixed(1)} ساعة`;
+                document.getElementById('kpiDailyLoadSub').textContent = `متاح ${Number(appState.daily_free_hours).toFixed(1)} ساعة/يوم`;
+
+                const upcomingTasks = activeTasks.filter(t => t.hours_left >= 0).sort((a, b) => a.hours_left - b.hours_left);
+                if (upcomingTasks.length > 0) {
+                    const nearest = upcomingTasks[0];
+                    if (nearest.hours_left <= 24) {
+                        document.getElementById('kpiNearestDue').textContent = `بعد ${nearest.hours_left} ساعة`;
+                    } else {
+                        document.getElementById('kpiNearestDue').textContent = `بعد ${nearest.days_left} يوم`;
+                    }
+                    document.getElementById('kpiNearestTaskTitle').textContent = `${nearest.type}: ${nearest.title} (${nearest.subject})`;
+                } else {
+                    document.getElementById('kpiNearestDue').textContent = 'لا يوجد';
+                    document.getElementById('kpiNearestTaskTitle').textContent = 'لا توجد مواعيد قادمة';
+                }
+
+                if (appState.grades.length > 0) {
+                    const avgPct = appState.grades.reduce((s, g) => s + Number(g.percentage), 0) / appState.grades.length;
+                    const gpa5 = avgPct >= 95 ? 5.0 : avgPct >= 90 ? 4.75 : avgPct >= 85 ? 4.5 : avgPct >= 80 ? 4.0 : avgPct >= 75 ? 3.5 : avgPct >= 70 ? 3.0 : 2.5;
+                    const letter = avgPct >= 95 ? 'امتياز مرتفع (A+)' : avgPct >= 90 ? 'امتياز (A)' : avgPct >= 85 ? 'جيد جداً مرتفع (B+)' : avgPct >= 80 ? 'جيد جداً (B)' : avgPct >= 75 ? 'جيد مرتفع (C+)' : 'جيد (C)';
+                    document.getElementById('kpiAverageGrade').textContent = `${avgPct.toFixed(1)}%`;
+                    document.getElementById('kpiGpaBadge').textContent = `GPA ${gpa5.toFixed(2)}/5`;
+                    document.getElementById('kpiGradeLetter').textContent = `التقدير العام: ${letter}`;
+                } else {
+                    document.getElementById('kpiAverageGrade').textContent = 'غير مسجل';
+                    document.getElementById('kpiGpaBadge').textContent = 'GPA --';
+                    document.getElementById('kpiGradeLetter').textContent = 'أضف درجاتك للتحليل';
+                }
+
+                // تحديث شريط ساعات الفراغ والاستراتيجية
+                document.getElementById('sliderFreeHours').value = appState.daily_free_hours;
+                document.getElementById('freeHoursBadge').textContent = `${Number(appState.daily_free_hours).toFixed(1)} ساعة`;
+                document.getElementById('planHoursHeaderBadge').textContent = `${Number(appState.daily_free_hours).toFixed(1)} ساعات يومياً`;
+                document.getElementById('selectStudyStrategy').value = appState.strategy || 'balanced';
+
+                // 2. تحديث القوائم المنسدلة للمواد
+                populateSubjectDropdowns();
+
+                // 3. تحديث مركز التنبيهات والجدول
+                renderAlertsAndPriorityTable(prioritized);
+
+                // 4. تحديث خطة المذاكرة والجدول الأسبوعي
+                renderStudyPlanAndSchedule(prioritized);
+
+                // 5. تحديث الرسوم البيانية وسجل الدرجات
+                renderAnalyticsAndGrades(activeTasks);
+
+                // 6. تحديث عرض محرك C++ الحي
+                renderCppEngineOutput(activeTasks);
+
+                if (triggerAutoNotify) {
+                    checkAndTrigger24HourNotifications(prioritized, false);
+                } else {
+                    // تحديث شريط الـ 24 ساعة العلوي دون تكرار الصوت
+                    const urgentTasks = prioritized.filter(t => !t.completed && t.hours_left > 0 && t.hours_left <= 24);
+                    const banner = document.getElementById('urgent24hBanner');
+                    if (urgentTasks.length > 0) {
+                        banner.classList.remove('hidden');
+                        const titles = urgentTasks.map(t => `«${t.title} (${t.subject}) — متبقي ${t.hours_left} ساعة»`).join(' ، ');
+                        document.getElementById('urgent24hBannerText').textContent = `🚨 تنبيه عاجل (أقل من 24 ساعة): لديك ${urgentTasks.length} مهمة حرجة: ${titles}`;
+                    } else {
+                        banner.classList.add('hidden');
+                    }
+                }
+            }
+
+            function populateSubjectDropdowns() {
+                const subjectsSet = new Set();
+                appState.schedule.forEach(s => { if (s.subject) subjectsSet.add(s.subject); });
+                appState.tasks.forEach(t => { if (t.subject) subjectsSet.add(t.subject); });
+                appState.grades.forEach(g => { if (g.subject) subjectsSet.add(g.subject); });
+                const subjects = Array.from(subjectsSet);
+
+                // فلتر المواد في التبويب الأول
+                const filterSelect = document.getElementById('filterTaskSubject');
+                const currentFilterVal = filterSelect.value || 'ALL';
+                filterSelect.innerHTML = `<option value="ALL">جميع المواد الدراسية (${subjects.length})</option>` +
+                    subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+                if (subjects.includes(currentFilterVal)) {
+                    filterSelect.value = currentFilterVal;
+                }
+
+                // القائمة المنسدلة لاختيار المادة عند إضافة مهمة جديدة
+                const presetSelect = document.getElementById('selectTaskSubjectPreset');
+                presetSelect.innerHTML = `<option value="__CUSTOM__">+ كتابة مادة جديدة...</option>` +
+                    subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+            }
+
+            function renderAlertsAndPriorityTable(prioritized) {
+                const subjFilter = document.getElementById('filterTaskSubject').value;
+                const typeFilter = document.getElementById('filterTaskType').value;
+                const urgFilter = document.getElementById('filterTaskUrgency').value;
+
+                const filtered = prioritized.filter(t => {
+                    if (subjFilter !== 'ALL' && t.subject !== subjFilter) return false;
+                    if (typeFilter !== 'ALL' && t.type !== typeFilter) return false;
+                    if (urgFilter === 'ACTIVE' && t.completed) return false;
+                    if (urgFilter === 'URGENT24' && (t.completed || t.hours_left <= 0 || t.hours_left > 24)) return false;
+                    if (urgFilter === 'COMPLETED' && !t.completed) return false;
+                    return true;
+                });
+
+                const cardsContainer = document.getElementById('alertsCardsContainer');
+                const tbody = document.getElementById('priorityTableBody');
+
+                if (filtered.length === 0) {
+                    cardsContainer.innerHTML = `
+                        <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-dashed border-slate-300 dark:border-slate-700 text-center">
+                            <div class="text-2xl mb-1">🎉</div>
+                            <div class="font-bold text-sm">لا توجد مهام مطابقة للفلتر المحدد حالياً!</div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">يمكنك تغيير خيارات القوائم المنسدلة بالأعلى أو الضغط على «تحميل بيانات تجريبية متكاملة».</p>
+                        </div>
+                    `;
+                    tbody.innerHTML = `<tr><td colspan="9" class="py-6 text-center text-slate-400">لا توجد بيانات للعرض</td></tr>`;
+                } else {
+                    cardsContainer.innerHTML = filtered.map(t => {
+                        let cardStyle = 'bg-emerald-50/90 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-100';
+                        let badgeLabel = `📅 متبقي ${t.days_left} يوم`;
+
+                        if (t.completed) {
+                            cardStyle = 'bg-slate-100 dark:bg-slate-800/60 border-slate-300 dark:border-slate-700 text-slate-500 line-through';
+                            badgeLabel = '✅ مكتملة';
+                        } else if (t.hours_left <= 0) {
+                            cardStyle = 'bg-rose-100/90 dark:bg-rose-950/50 border-rose-400 dark:border-rose-700 text-rose-950 dark:text-rose-100';
+                            badgeLabel = `🚨 متأخر منذ ${Math.abs(t.hours_left)} ساعة`;
+                        } else if (t.hours_left <= 24) {
+                            cardStyle = 'bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-500 text-rose-950 dark:text-rose-100 urgent-24h-pulse';
+                            badgeLabel = `🔔 عاجل جداً: متبقي ${t.hours_left} ساعة فقط (< 24 ساعة)!`;
+                        } else if (t.days_left <= 3) {
+                            cardStyle = 'bg-amber-50/90 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-100';
+                            badgeLabel = `⚠️ عاجل (متبقي ${t.days_left} أيام / ${Math.round(t.hours_left)} ساعة)`;
+                        } else if (t.days_left <= 7) {
+                            cardStyle = 'bg-sky-50/90 dark:bg-sky-950/30 border-sky-300 dark:border-sky-800 text-sky-950 dark:text-sky-100';
+                            badgeLabel = `⏳ قريب (متبقي ${t.days_left} أيام)`;
+                        }
+
+                        return `
+                            <div class="p-3.5 rounded-xl border ${cardStyle} flex flex-wrap items-center justify-between gap-2 transition">
+                                <div class="space-y-0.5">
+                                    <div class="text-xs sm:text-sm font-extrabold flex flex-wrap items-center gap-2">
+                                        <span>[${t.type}] ${t.title}</span>
+                                        <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10">مادة: ${t.subject}</span>
+                                    </div>
+                                    <div class="text-xs opacity-85">
+                                        الموعد: <span class="font-mono">${t.due_date} ${t.due_time || '23:59'}</span> | الساعات المطلوبة: <b>${t.est_hours} س</b> | الصعوبة: <b>${'⭐'.repeat(t.difficulty)}</b>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 shadow-sm">${badgeLabel}</span>
+                                    <span class="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-indigo-600 text-white">أولوية ${t.priority_score}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    tbody.innerHTML = filtered.map(t => `
+                        <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition ${t.completed ? 'opacity-60' : ''}">
+                            <td class="py-3 px-3 font-bold ${t.completed ? 'line-through' : ''}">${t.title}</td>
+                            <td class="py-3 px-3">${t.subject}</td>
+                            <td class="py-3 px-3"><span class="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-semibold text-xs">${t.type}</span></td>
+                            <td class="py-3 px-3 font-mono text-xs">${t.due_date} <span class="text-slate-400">${t.due_time || '23:59'}</span></td>
+                            <td class="py-3 px-3">${formatTimeRemainingBadge(t.hours_left, t.days_left)}</td>
+                            <td class="py-3 px-3 font-semibold">${t.est_hours} س</td>
+                            <td class="py-3 px-3">${t.difficulty} / 5</td>
+                            <td class="py-3 px-3 font-extrabold text-indigo-600 dark:text-indigo-400">${t.priority_score}</td>
+                            <td class="py-3 px-3 text-center">
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <button type="button" data-action="toggle-task" data-index="${t.original_index}" class="px-2.5 py-1 rounded-lg text-xs font-bold ${t.completed ? 'bg-amber-100 text-amber-800 hover:bg-amber-200' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'} transition" title="${t.completed ? 'إعادة فتح المهمة' : 'تمييز كمكتملة'}">
+                                        ${t.completed ? '↩️ تراجع' : '✔️ إنجاز'}
+                                    </button>
+                                    <button type="button" data-action="delete-task" data-index="${t.original_index}" class="px-2 py-1 rounded-lg text-xs bg-rose-100 text-rose-700 hover:bg-rose-200 transition" title="حذف المهمة">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+
+                // تحديث القائمة المنسدلة للإنجاز السريع
+                const quickSelect = document.getElementById('quickCompleteSelect');
+                const activeOnly = prioritized.filter(t => !t.completed);
+                if (activeOnly.length === 0) {
+                    quickSelect.innerHTML = `<option value="">🎉 جميع المهام مكتملة حالياً</option>`;
+                    document.getElementById('btnQuickCompleteTask').disabled = true;
+                    document.getElementById('btnQuickCompleteTask').classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    document.getElementById('btnQuickCompleteTask').disabled = false;
+                    document.getElementById('btnQuickCompleteTask').classList.remove('opacity-50', 'cursor-not-allowed');
+                    quickSelect.innerHTML = activeOnly.map(t =>
+                        `<option value="${t.original_index}">${t.type}: ${t.title} (${t.subject}) — أولوية ${t.priority_score}</option>`
+                    ).join('');
+                }
+            }
+
+            function renderStudyPlanAndSchedule(prioritized) {
+                const planRows = generateStudyPlan(prioritized);
+                const horizonFilter = document.getElementById('filterPlanDay').value;
+                const filteredPlan = horizonFilter === 'ALL'
+                    ? planRows
+                    : planRows.filter(r => r.day_offset < Number(horizonFilter));
+
+                const planBody = document.getElementById('studyPlanTableBody');
+                if (filteredPlan.length === 0) {
+                    planBody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-400">لا توجد جلسات مذاكرة مجدولة في هذه الفترة.</td></tr>`;
+                } else {
+                    planBody.innerHTML = filteredPlan.map(row => `
+                        <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
+                            <td class="py-2.5 px-3 font-mono text-xs">${row.date}</td>
+                            <td class="py-2.5 px-3 font-bold">${row.day_name}</td>
+                            <td class="py-2.5 px-3 font-semibold text-indigo-700 dark:text-indigo-300">${row.subject}</td>
+                            <td class="py-2.5 px-3">${row.task_display}</td>
+                            <td class="py-2.5 px-3"><span class="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold text-xs">${row.allocated_hours} ساعة</span></td>
+                            <td class="py-2.5 px-3 font-bold">${row.priority_score}</td>
+                        </tr>
+                    `).join('');
+                }
+
+                // الجدول الدراسي الأسبوعي
+                const dayFilter = document.getElementById('filterScheduleDay').value;
+                const schedBody = document.getElementById('scheduleTableBody');
+                const filteredSched = appState.schedule
+                    .map((item, idx) => ({ ...item, idx }))
+                    .filter(item => dayFilter === 'ALL' || item.day === dayFilter);
+
+                if (filteredSched.length === 0) {
+                    schedBody.innerHTML = `<tr><td colspan="6" class="py-5 text-center text-slate-400">لا توجد محاضرات مسجلة لهذا اليوم.</td></tr>`;
+                } else {
+                    schedBody.innerHTML = filteredSched.map(item => {
+                        const dur = getLectureDurationHours(item.start_time, item.end_time);
+                        return `
+                            <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
+                                <td class="py-2.5 px-3 font-bold">${item.day}</td>
+                                <td class="py-2.5 px-3 font-semibold">${item.subject}</td>
+                                <td class="py-2.5 px-3 font-mono text-xs">${item.start_time}</td>
+                                <td class="py-2.5 px-3 font-mono text-xs">${item.end_time}</td>
+                                <td class="py-2.5 px-3 text-xs text-slate-500">${dur} ساعة</td>
+                                <td class="py-2.5 px-3 text-center">
+                                    <button type="button" data-action="delete-schedule" data-index="${item.idx}" class="px-2 py-1 rounded-lg text-xs bg-rose-100 text-rose-700 hover:bg-rose-200 transition">🗑️</button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+
+            function renderAnalyticsAndGrades(activeTasks) {
+                const gradesBody = document.getElementById('gradesTableBody');
+                if (appState.grades.length === 0) {
+                    gradesBody.innerHTML = `<tr><td colspan="6" class="py-5 text-center text-slate-400">لم يتم تسجيل درجات بعد.</td></tr>`;
+                } else {
+                    gradesBody.innerHTML = appState.grades.map((g, idx) => {
+                        const pct = Number(g.percentage);
+                        const badgeColor = pct >= 90
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                            : pct >= 75
+                                ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300'
+                                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300';
+                        const letter = pct >= 95 ? 'A+' : pct >= 90 ? 'A' : pct >= 85 ? 'B+' : pct >= 80 ? 'B' : pct >= 75 ? 'C+' : pct >= 70 ? 'C' : 'D';
+                        return `
+                            <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
+                                <td class="py-2.5 px-3 font-bold">${g.subject}</td>
+                                <td class="py-2.5 px-3">${g.assessment}</td>
+                                <td class="py-2.5 px-3 font-mono">${g.score} / ${g.max_score}</td>
+                                <td class="py-2.5 px-3 font-bold">${pct.toFixed(1)}%</td>
+                                <td class="py-2.5 px-3"><span class="px-2.5 py-0.5 rounded-full font-bold text-xs ${badgeColor}">${letter}</span></td>
+                                <td class="py-2.5 px-3 text-center">
+                                    <button type="button" data-action="delete-grade" data-index="${idx}" class="px-2 py-1 rounded-lg text-xs bg-rose-100 text-rose-700 hover:bg-rose-200 transition">🗑️</button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+                // تحديث الرسوم البيانية باستخدام Chart.js
+                if (typeof Chart === 'undefined') return;
+
+                // تجميع متوسط الدرجات لكل مادة
+                const subjGradesMap = {};
+                appState.grades.forEach(g => {
+                    if (!subjGradesMap[g.subject]) subjGradesMap[g.subject] = [];
+                    subjGradesMap[g.subject].push(Number(g.percentage));
+                });
+                const gradeLabels = Object.keys(subjGradesMap);
+                const gradeValues = gradeLabels.map(s => {
+                    const arr = subjGradesMap[s];
+                    return Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10;
+                });
+
+                const barCanvas = document.getElementById('gradesBarChart');
+                if (gradesChartInstance) gradesChartInstance.destroy();
+                gradesChartInstance = new Chart(barCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: gradeLabels.length ? gradeLabels : ['لا توجد بيانات'],
+                        datasets: [{
+                            label: 'متوسط النسبة المئوية (%)',
+                            data: gradeValues.length ? gradeValues : [0],
+                            backgroundColor: ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
+                            borderRadius: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, max: 100 }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+
+                // تجميع الساعات المطلوبة لكل مادة
+                const subjHoursMap = {};
+                activeTasks.forEach(t => {
+                    subjHoursMap[t.subject] = (subjHoursMap[t.subject] || 0) + Number(t.est_hours);
+                });
+                const hourLabels = Object.keys(subjHoursMap);
+                const hourValues = hourLabels.map(s => subjHoursMap[s]);
+
+                const doughnutCanvas = document.getElementById('hoursDoughnutChart');
+                if (hoursChartInstance) hoursChartInstance.destroy();
+                hoursChartInstance = new Chart(doughnutCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: hourLabels.length ? hourLabels : ['لا توجد مهام معلقة'],
+                        datasets: [{
+                            data: hourValues.length ? hourValues : [1],
+                            backgroundColor: ['#6366f1', '#14b8a6', '#f97316', '#e11d48', '#8b5cf6', '#06b6d4'],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '62%'
+                    }
+                });
+            }
+
+            function renderCppEngineOutput(activeTasks) {
+                const pre = document.getElementById('cppLiveOutputPre');
+                if (!pre) return;
+                const urgent24 = activeTasks.filter(t => t.hours_left > 0 && t.hours_left <= 24);
+                const payload = {
+                    engine: 'SmartStudentEngine C++17 (Active)',
+                    strategy: appState.strategy || 'balanced',
+                    daily_free_hours: appState.daily_free_hours,
+                    urgent_under_24h_alerts: urgent24.map(t => ({
+                        title: t.title,
+                        subject: t.subject,
+                        hours_left: t.hours_left,
+                        priority_score: t.priority_score
+                    })),
+                    prioritized_queue_count: activeTasks.length
+                };
+                pre.textContent = JSON.stringify(payload, null, 2);
+            }
+
+            // =================================================================
+            // ربط الأحداث والتفاعلات (Event Listeners)
+            // =================================================================
+            function initEvents() {
+                // التبديل بين التبويبات
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const targetId = btn.getAttribute('data-tab');
+                        document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+                        document.getElementById(targetId).classList.remove('hidden');
+
+                        document.querySelectorAll('.tab-btn').forEach(b => {
+                            b.className = 'tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800';
+                        });
+                        btn.className = 'tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-sm';
+
+                        if (targetId === 'tab-analytics') {
+                            renderAll(false);
+                        }
+                    });
+                });
+
+                // شريط ساعات الفراغ والاستراتيجية
+                document.getElementById('sliderFreeHours').addEventListener('input', e => {
+                    appState.daily_free_hours = parseFloat(e.target.value);
+                    saveState();
+                    renderAll(false);
+                });
+
+                document.getElementById('selectStudyStrategy').addEventListener('change', e => {
+                    appState.strategy = e.target.value;
+                    saveState();
+                    renderAll(false);
+                    showToast('تم تحديث خوارزمية الجدولة', 'تم إعادة حساب جلسات المذاكرة وفق الاستراتيجية المختارة.', 'indigo');
+                });
+
+                // الفلاتر المنسدلة
+                ['filterTaskSubject', 'filterTaskType', 'filterTaskUrgency', 'filterPlanDay', 'filterScheduleDay'].forEach(id => {
+                    document.getElementById(id).addEventListener('change', () => renderAll(false));
+                });
+
+                // ربط القائمة المنسدلة للمواد في نموذج إضافة مهمة
+                document.getElementById('selectTaskSubjectPreset').addEventListener('change', e => {
+                    if (e.target.value !== '__CUSTOM__') {
+                        document.getElementById('inputTaskSubject').value = e.target.value;
+                    } else {
+                        document.getElementById('inputTaskSubject').value = '';
+                        document.getElementById('inputTaskSubject').focus();
+                    }
+                });
+
+                // إنجاز مهمة عبر القائمة المنسدلة السريعة
+                document.getElementById('btnQuickCompleteTask').addEventListener('click', () => {
+                    const sel = document.getElementById('quickCompleteSelect');
+                    if (sel.value === '') return;
+                    const idx = Number(sel.value);
+                    if (appState.tasks[idx]) {
+                        appState.tasks[idx].completed = true;
+                        saveState();
+                        renderAll(false);
+                        showToast('أحسنت الإنجاز! 🎉', `تم تمييز المهمة «${appState.tasks[idx].title}» كمكتملة.`, 'emerald');
+                    }
+                });
+
+                // أزرار الإجراءات داخل الجداول (Delegation)
+                document.body.addEventListener('click', e => {
+                    const btn = e.target.closest('button[data-action]');
+                    if (!btn) return;
+                    const action = btn.getAttribute('data-action');
+                    const idx = Number(btn.getAttribute('data-index'));
+
+                    if (action === 'toggle-task' && appState.tasks[idx]) {
+                        appState.tasks[idx].completed = !appState.tasks[idx].completed;
+                        saveState();
+                        renderAll(false);
+                        showToast(
+                            appState.tasks[idx].completed ? 'تم إنجاز المهمة ✔️' : 'تمت إعادة فتح المهمة ↩️',
+                            appState.tasks[idx].title,
+                            'emerald'
+                        );
+                    } else if (action === 'delete-task' && appState.tasks[idx]) {
+                        const title = appState.tasks[idx].title;
+                        appState.tasks.splice(idx, 1);
+                        saveState();
+                        renderAll(false);
+                        showToast('تم حذف المهمة', `حُذفت «${title}» من قائمتك.`, 'amber');
+                    } else if (action === 'delete-schedule' && appState.schedule[idx]) {
+                        appState.schedule.splice(idx, 1);
+                        saveState();
+                        renderAll(false);
+                        showToast('تم حذف المحاضرة', 'تم تحديث جدولك الأسبوعي.', 'amber');
+                    } else if (action === 'delete-grade' && appState.grades[idx]) {
+                        appState.grades.splice(idx, 1);
+                        saveState();
+                        renderAll(false);
+                        showToast('تم حذف الدرجة', 'تم تحديث المعدل العام والرسوم البيانية.', 'amber');
+                    }
+                });
+
+                // إضافة مهمة جديدة
+                document.getElementById('formAddTask').addEventListener('submit', e => {
+                    e.preventDefault();
+                    const title = document.getElementById('inputTaskTitle').value.trim();
+                    const subject = document.getElementById('inputTaskSubject').value.trim();
+                    const type = document.getElementById('selectTaskType').value;
+                    const difficulty = Number(document.getElementById('selectTaskDifficulty').value);
+                    const dueDate = document.getElementById('inputTaskDueDate').value;
+                    const dueTime = document.getElementById('inputTaskDueTime').value || '23:59';
+                    const estHours = parseFloat(document.getElementById('inputTaskEstHours').value);
+
+                    if (!title || !subject || !dueDate) return;
+
+                    const newTask = {
+                        id: Date.now(),
+                        title,
+                        subject,
+                        type,
+                        due_date: dueDate,
+                        due_time: dueTime,
+                        est_hours: estHours,
+                        difficulty,
+                        completed: false
+                    };
+                    appState.tasks.push(newTask);
+                    saveState();
+                    e.target.reset();
+                    document.getElementById('inputTaskDueDate').value = getOffsetDateString(1);
+                    document.getElementById('inputTaskDueTime').value = '14:00';
+                    document.getElementById('inputTaskEstHours').value = '3.0';
+
+                    renderAll(true);
+                    showToast('تمت إضافة المهمة بنجاح ➕', `تم إدراج «${title}» في خطة المذاكرة وحساب أولويتها.`, 'emerald');
+                });
+
+                // إضافة محاضرة جديدة مع التحقق من صحة الوقت
+                document.getElementById('formAddSchedule').addEventListener('submit', e => {
+                    e.preventDefault();
+                    const day = document.getElementById('selectScheduleDay').value;
+                    const subject = document.getElementById('inputScheduleSubject').value.trim();
+                    const start = document.getElementById('inputScheduleStart').value;
+                    const end = document.getElementById('inputScheduleEnd').value;
+
+                    if (getLectureDurationHours(start, end) <= 0) {
+                        showToast('تنبيه في وقت المحاضرة ⚠️', 'يرجى التأكد من أن وقت النهاية يأتي بعد وقت البداية.', 'rose');
+                        return;
+                    }
+
+                    appState.schedule.push({
+                        id: Date.now(),
+                        day,
+                        subject,
+                        start_time: start,
+                        end_time: end
+                    });
+                    saveState();
+                    document.getElementById('inputScheduleSubject').value = '';
+                    renderAll(false);
+                    showToast('تمت إضافة المحاضرة 🏫', `أضيفت محاضرة «${subject}» يوم ${day}.`, 'emerald');
+                });
+
+                // إضافة درجة جديدة مع التحقق من عدم تجاوز الدرجة العظمى
+                document.getElementById('formAddGrade').addEventListener('submit', e => {
+                    e.preventDefault();
+                    const subject = document.getElementById('inputGradeSubject').value.trim();
+                    const assessment = document.getElementById('selectGradeAssessment').value;
+                    const score = parseFloat(document.getElementById('inputGradeScore').value);
+                    const maxScore = parseFloat(document.getElementById('inputGradeMax').value);
+
+                    if (score > maxScore) {
+                        showToast('خطأ في إدخال الدرجة ⚠️', 'لا يمكن أن تكون درجتك أكبر من الدرجة العظمى للتقييم!', 'rose');
+                        return;
+                    }
+
+                    const pct = Math.round((score / maxScore) * 10000) / 100;
+                    appState.grades.push({
+                        id: Date.now(),
+                        subject,
+                        assessment,
+                        score,
+                        max_score: maxScore,
+                        percentage: pct
+                    });
+                    saveState();
+                    document.getElementById('inputGradeSubject').value = '';
+                    renderAll(false);
+                    showToast('تم حفظ الدرجة 🏅', `النسبة المحققة في ${subject}: ${pct}%`, 'emerald');
+                });
+
+                // تفعيل إشعارات المتصفح والنظام الحقيقية
+                document.getElementById('btnEnableNotifications').addEventListener('click', async () => {
+                    if (!('Notification' in window)) {
+                        showToast('الإشعارات الفورية مفعلة', 'متصفحك الحالي يعرض التنبيهات الصوتية والمرئية مباشرة داخل الصفحة.', 'indigo');
+                        return;
+                    }
+                    try {
+                        const perm = await Notification.requestPermission();
+                        updateNotificationButtonUI();
+                        if (perm === 'granted') {
+                            sendRealSystemNotification(
+                                '🎓 تم تفعيل إشعارات منظّم حياة الطالب الذكي!',
+                                'ستصلك إشعارات حقيقية على جهازك تلقائياً عندما يتبقى أقل من 24 ساعة على أي مهمة.'
+                            );
+                        } else {
+                            showToast('تنبيه الإشعارات', 'لم يتم منح إذن إشعارات النظام؛ ستستمر التنبيهات المرئية والصوتية بالعمل.', 'amber');
+                        }
+                    } catch (err) {
+                        showToast('التنبيهات الذكية جاهزة', 'تم تفعيل التنبيهات الفورية بنجاح.', 'emerald');
+                    }
+                });
+
+                // زر اختبار إرسال إشعار فوري
+                document.getElementById('btnTestNotification').addEventListener('click', () => {
+                    const prioritized = getPrioritizedTasks();
+                    const urgent = prioritized.find(t => !t.completed && t.hours_left > 0 && t.hours_left <= 24) || prioritized.find(t => !t.completed);
+                    if (urgent) {
+                        sendRealSystemNotification(
+                            `🔔 تذكير عاجل (< 24 ساعة): ${urgent.subject}`,
+                            `المهمة: [${urgent.type}] ${urgent.title} — متبقي ${urgent.hours_left} ساعة فقط! (أولوية: ${urgent.priority_score})`
+                        );
+                    } else {
+                        sendRealSystemNotification(
+                            '🎓 اختبار إشعارات منظّم الطالب الذكي',
+                            'نظام الإشعارات الصوتية وإشعارات الجهاز يعمل بكفاءة تامة!'
+                        );
+                    }
+                });
+
+                document.getElementById('btnDispatchUrgentNow').addEventListener('click', () => {
+                    checkAndTrigger24HourNotifications(getPrioritizedTasks(), true);
+                });
+
+                // تبديل الصوت والوضع الليلي
+                document.getElementById('btnToggleSound').addEventListener('click', () => {
+                    soundEnabled = !soundEnabled;
+                    document.getElementById('soundIcon').textContent = soundEnabled ? '🔊' : '🔇';
+                    showToast(soundEnabled ? 'تم تفعيل الصوت 🔊' : 'تم كتم الصوت 🔇', 'يمكنك التحكم في التنبيه الصوتي في أي وقت.', 'indigo');
+                });
+
+                document.getElementById('btnToggleTheme').addEventListener('click', () => {
+                    const htmlEl = document.documentElement;
+                    const isDark = htmlEl.classList.toggle('dark');
+                    document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
+                });
+
+                // تحميل البيانات التجريبية ومسح البيانات
+                document.getElementById('btnLoadSample').addEventListener('click', () => {
+                    appState = createSampleData();
+                    saveState();
+                    renderAll(true);
+                    showToast('تم تحميل البيانات التجريبية 📥', 'تتضمن مهمة عاجلة يتبقى عليها 16 ساعة لتجربة إشعار الـ 24 ساعة!', 'emerald');
+                });
+
+                document.getElementById('btnClearAll').addEventListener('click', () => {
+                    openConfirmModal(
+                        '🗑️ تأكيد مسح جميع البيانات',
+                        'هل أنت متأكد من رغبتك في مسح جميع المهام والجدول والدرجات؟ لا يمكن التراجع عن هذه الخطوة.',
+                        () => {
+                            appState = { daily_free_hours: 4.0, strategy: 'balanced', schedule: [], tasks: [], grades: [] };
+                            saveState();
+                            renderAll(false);
+                            showToast('تم مسح جميع البيانات', 'يمكنك البدء بإدخال مهامك الجديدة أو استعادة البيانات التجريبية.', 'amber');
+                        }
+                    );
+                });
+
+                document.getElementById('btnModalCancel').addEventListener('click', closeConfirmModal);
+                document.getElementById('btnModalConfirm').addEventListener('click', () => {
+                    if (typeof pendingConfirmCallback === 'function') pendingConfirmCallback();
+                    closeConfirmModal();
+                });
+
+                // تصدير واستيراد JSON
+                document.getElementById('btnExportJson').addEventListener('click', () => {
+                    const blob = new Blob([JSON.stringify(appState, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'student_data.json';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                    showToast('تم تصدير البيانات 📤', 'تم حفظ ملف student_data.json على جهازك.', 'emerald');
+                });
+
+                document.getElementById('inputImportJson').addEventListener('change', e => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                        try {
+                            const imported = JSON.parse(ev.target.result);
+                            if (imported && Array.isArray(imported.tasks)) {
+                                appState = imported;
+                                saveState();
+                                renderAll(true);
+                                showToast('تم استيراد البيانات بنجاح 📂', 'تم تحديث كافة الجداول والرسوم البيانية.', 'emerald');
+                            }
+                        } catch (err) {
+                            showToast('خطأ في الملف ⚠️', 'تأكد من اختيار ملف JSON صالح.', 'rose');
+                        }
+                    };
+                    reader.readAsText(file);
+                });
+
+                // نسخ كود C++
+                document.getElementById('btnCopyCppCode').addEventListener('click', () => {
+                    const text = document.getElementById('cppLiveOutputPre').textContent;
+                    try {
+                        navigator.clipboard.writeText(text);
+                    } catch (e) {
+                        const ta = document.createElement('textarea');
+                        ta.value = text;
+                        document.body.appendChild(ta);
+                        ta.select();
+                        document.execCommand('copy');
+                        ta.remove();
+                    }
+                    showToast('تم النسخ للحافظة 📋', 'تم نسخ مخرجات محرك C++ بنجاح.', 'emerald');
+                });
+
+                // مؤقت بومودورو
+                const pomoSelect = document.getElementById('selectPomoMode');
+                const pomoDisplay = document.getElementById('pomoTimerDisplay');
+                const pomoBadge = document.getElementById('pomoStateBadge');
+                const pomoStartBtn = document.getElementById('btnPomoStartPause');
+
+                function renderPomoTime() {
+                    const m = String(Math.floor(pomoRemainingSeconds / 60)).padStart(2, '0');
+                    const s = String(pomoRemainingSeconds % 60).padStart(2, '0');
+                    pomoDisplay.textContent = `${m}:${s}`;
+                }
+
+                pomoSelect.addEventListener('change', () => {
+                    if (pomoInterval) clearInterval(pomoInterval);
+                    pomoRunning = false;
+                    pomoRemainingSeconds = Number(pomoSelect.value) * 60;
+                    pomoStartBtn.textContent = '▶️ ابدأ الجلسة';
+                    pomoBadge.textContent = 'جاهز للبدء';
+                    renderPomoTime();
+                });
+
+                pomoStartBtn.addEventListener('click', () => {
+                    if (pomoRunning) {
+                        clearInterval(pomoInterval);
+                        pomoRunning = false;
+                        pomoStartBtn.textContent = '▶️ استئناف';
+                        pomoBadge.textContent = 'متوقف مؤقتاً';
+                    } else {
+                        pomoRunning = true;
+                        pomoStartBtn.textContent = '⏸️ إيقاف مؤقت';
+                        pomoBadge.textContent = '🔥 جاري التركيز...';
+                        if (pomoInterval) clearInterval(pomoInterval);
+                        pomoInterval = setInterval(() => {
+                            if (pomoRemainingSeconds > 0) {
+                                pomoRemainingSeconds--;
+                                renderPomoTime();
+                            } else {
+                                clearInterval(pomoInterval);
+                                pomoRunning = false;
+                                pomoStartBtn.textContent = '▶️ ابدأ الجلسة';
+                                pomoBadge.textContent = 'اكتملت الجلسة ✅';
+                                sendRealSystemNotification('⏱️ انتهت جلسة التركيز!', 'أحسنت! خذ قسطاً من الراحة قبل الجلسة القادمة.');
+                            }
+                        }, 1000);
+                    }
+                });
+
+                document.getElementById('btnPomoReset').addEventListener('click', () => {
+                    if (pomoInterval) clearInterval(pomoInterval);
+                    pomoRunning = false;
+                    pomoRemainingSeconds = Number(pomoSelect.value) * 60;
+                    pomoStartBtn.textContent = '▶️ ابدأ الجلسة';
+                    pomoBadge.textContent = 'جاهز للبدء';
+                    renderPomoTime();
+                });
+
+                // تدوير العبارات التحفيزية كل 12 ثانية
+                let quoteIdx = 0;
+                setInterval(() => {
+                    quoteIdx = (quoteIdx + 1) % MOTIVATIONAL_QUOTES.length;
+                    const qEl = document.getElementById('motivationalQuote');
+                    if (qEl) qEl.textContent = MOTIVATIONAL_QUOTES[quoteIdx];
+                }, 12000);
+
+                // فحص دوري كل دقيقة للمهام التي دخلت نطاق الـ 24 ساعة
+                setInterval(() => {
+                    checkAndTrigger24HourNotifications(getPrioritizedTasks(), false);
+                }, 60000);
+            }
+
+            // تهيئة التاريخ الافتراضي في نموذج إضافة المهمة وتشغيل التطبيق
+            window.addEventListener('DOMContentLoaded', () => {
+                document.getElementById('inputTaskDueDate').value = getOffsetDateString(1);
+                updateNotificationButtonUI();
+                initEvents();
+                renderAll(true);
+            });
+        })();
+    </script>
+</body>
+</html>
